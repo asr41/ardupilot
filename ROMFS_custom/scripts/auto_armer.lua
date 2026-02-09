@@ -9,17 +9,17 @@ function update()
     end
     local voltage = battery:voltage(battery_instance)
     if voltage == nil then
-        gcs:send_text(6, "No battery data!")
+        gcs:send_text(7, "No battery data!")
     else 
-        gcs:send_text(6, string.format("Battery: %.2f V", voltage))
+        gcs:send_text(7, string.format("Battery: %.2f V", voltage))
         if voltage < voltage_threshold then
             param:set("VTX_POWER", low_power)
             local power = param:get("VTX_POWER")
-            gcs:send_text(6, "Battery low -> Current VTX_POWER: " .. tostring(power))
+            gcs:send_text(7, "Battery low -> Current VTX_POWER: " .. tostring(power))
         else
-            gcs:send_text(6, "Battery healthy -> VTX power normal")
+            gcs:send_text(7, "Battery healthy -> VTX power normal")
             local power = param:get("VTX_POWER")
-            gcs:send_text(6, "Current VTX_POWER: " .. tostring(power))
+            gcs:send_text(7, "Current VTX_POWER: " .. tostring(power))
         end
     end
     return update, 1000

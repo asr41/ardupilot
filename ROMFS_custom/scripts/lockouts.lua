@@ -132,14 +132,24 @@ end
 function nominal_cutaway()
     --cutaway reaches alt
 
-    if not drop_detected then
+    if not drop_detected and wire_burn_time_ms < 5000 then
         SRV_Channels:set_output_pwm(97, 2000)
         relay:on(0)
+
+        if wire_burn_time_ms == 0 then
+            wire_burn_last_time_ms = millis()
+        end
+
+        wire_burn_time_ms = wire_burn_time_ms + (millis() - wire_burn_last_time_ms)
+        wire_burn_last_time_ms = millis()
     else
         SRV_Channels:set_output_pwm(97, 1000)
         relay:off(0)
         cutaway_confirmed = true
-        
+    end
+
+    if wire_burn_time_ms > 5000 then
+        gcs:send_text(4, "WIRE BURN LIMIT EXCEEDED")
     end
 end
 
@@ -188,7 +198,7 @@ function update()
 
     altitude_updater()
 
-    if not servo_test_completed and not drop_detected and alt_m ~= nil and alt_m > 30000 and alt_m < 33866.6328 then
+    if not servo_test_completed and not drop_detected and alt_m ~= nil and alt_m > 33726.0 and alt_m < 33866.6328 then
         if servo_test_step == 0 then
             step_start = millis()
             previous_mode = vehicle:get_mode()
@@ -203,7 +213,7 @@ function update()
             SRV_Channels:set_output_pwm(95, 1300)
             SRV_Channels:set_output_pwm(96, 1300)
             if now - step_start >= 1000 then
-                gcs:send_text(6, "Servo deflect 1")
+                gcs:send_text(7, "Servo deflect 1")
                 servo_test_step = 2
                 step_start = now
             end
@@ -212,7 +222,7 @@ function update()
             SRV_Channels:set_output_pwm(95, 1700)
             SRV_Channels:set_output_pwm(96, 1700)
             if now - step_start >= 1000 then
-                gcs:send_text(6, "Servo deflect 2")
+                gcs:send_text(7, "Servo deflect 2")
                 servo_test_step = 3
                 step_start = now
             end
@@ -256,32 +266,32 @@ function update()
         gcs:send_text(6, "Mode: "..tostring(mode))
 
         if drop_detected then
-            gcs:send_text(6, "Drop detected")
+            gcs:send_text(7, "Drop detected")
         else
-            gcs:send_text(6, "On balloon")
+            gcs:send_text(7, "On balloon")
         end
         if pullup_complete then
-            gcs:send_text(6, "Pullup Complete")
+            gcs:send_text(7, "Pullup Complete")
         else
-            gcs:send_text(6, "Pullup, lockout")
+            gcs:send_text(7, "Pullup, lockout")
         end
         if cutaway_confirmed then
-            gcs:send_text(6, "cut away!")
+            gcs:send_text(7, "cut away!")
         else
-            gcs:send_text(6, "on flight train")
+            gcs:send_text(7, "on flight train")
         end
         if drop_commanded then
-            gcs:send_text(6, "commanded drop!")
+            gcs:send_text(7, "commanded drop!")
         else
-            gcs:send_text(6, "no command")
+            gcs:send_text(7, "no command")
         end
 
         if relay:get(0) then
-            gcs:send_text(6, "relay 1 hot")
+            gcs:send_text(7, "relay 1 hot")
         else
-            gcs:send_text(6, "relay 1 cold")
+            gcs:send_text(7, "relay 1 cold")
         end
-        gcs:send_text(6, "AltAGL: ".. alt_m)
+        gcs:send_text(7, "AltAGL: ".. alt_m)
     end
 
     if not drop_detected then
@@ -289,7 +299,7 @@ function update()
 
         if mode == RTL then
             if vehicle:set_mode(MANUAL) then
-                gcs:send_text(6, "Switched to MANUAL")
+                gcs:send_text(7, "Switched to MANUAL")
             else
                 gcs:send_text(4, "Mode change to MANUAL failed")
             end
@@ -316,7 +326,7 @@ function update()
             -- GPS not available
             if gps_lost_start_time == nil then
                 gps_lost_start_time = current_time
-                gcs:send_text(6, "GPS lost - starting timer")
+                gcs:send_text(5, "GPS lost - starting timer")
             end
             
             local gps_lost_duration = current_time - gps_lost_start_time
@@ -393,5 +403,7 @@ servo_test_completed = false
 servo_test_step = 0
 step_start = 0
 previous_mode = nil
+wire_burn_time_ms = 0
+wire_burn_last_time_ms = 0
 
 return update, 100

@@ -82,8 +82,8 @@ function update()
         if millis() - last_time_gfm_ms > 1000 then
             last_time_gfm_ms = millis()
 
-            gcs:send_text(6, "Top D: " .. deflection_top)
-            gcs:send_text(6, "Velocity: ".. V)
+            gcs:send_text(7, "Top D: " .. deflection_top)
+            gcs:send_text(7, "Velocity: ".. V)
             --gcs:send_text(6, "AOA = " .. math.deg(AOA))
             --gcs:send_text(6, "beta = ".. math.deg(beta))
         end
