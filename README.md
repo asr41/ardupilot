@@ -1,8 +1,6 @@
 # ArduPilot Project
 
-Debug:
-
-../Tools/autotest/sim_vehicle.py -f JSON:172.28.0.1 -L BRGRBalloon --console --map --osd -D -G
+Debug for plav in vscode lauch.json and tasks.json files should be included they just press f5 and it will run ardupilot code through debugger.
 
 <a href="https://ardupilot.org/discord"><img src="https://img.shields.io/discord/674039678562861068.svg" alt="Discord">
 
