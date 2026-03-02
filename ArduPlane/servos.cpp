@@ -424,10 +424,10 @@ void Plane::trifin_update()
     //
     // (This is a generic linear allocator; it is NOT claiming exact aerodynamics.)
 
-    const float G  = g.tri_mix_gain.get();
-    const float Kr = g.tri_mix_roll.get();
-    const float Kp = g.tri_mix_pitch.get();
-    const float Ky = g.tri_mix_yaw.get();
+    const float G  = g.tri_mix_gain.get(); // default: 0.5
+    const float Kr = g.tri_mix_roll.get(); // default: 1.0
+    const float Kp = g.tri_mix_pitch.get(); // default: 1.0
+    const float Ky = g.tri_mix_yaw.get(); //default: 1.0
 
     // cos/sin for 0, 120, 240 degrees
     constexpr float c1 =  1.0f;
@@ -445,11 +445,8 @@ void Plane::trifin_update()
     fin2 = constrain_float(fin2, -4500, 4500);
     fin3 = constrain_float(fin3, -4500, 4500);
 
-    fin1 = 1150.0;
-    fin2 = 1250.0;
-
     SRV_Channels::set_output_scaled(SRV_Channel::k_trifin1, fin1);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_trifin2, 0.0);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_trifin2, fin2);
     SRV_Channels::set_output_scaled(SRV_Channel::k_trifin3, fin3);
 
     static uint8_t counter = 0;
