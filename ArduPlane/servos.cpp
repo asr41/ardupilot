@@ -440,7 +440,7 @@ void Plane::trifin_setup()
 
     // Yaw contribution
     trifin_mix[0][2] =  c1 * inv_yaw_norm;
-    trifin_mix[1][2] =  c1 * inv_yaw_norm;
+    trifin_mix[1][2] =  c2 * inv_yaw_norm;
     trifin_mix[2][2] =  c3 * inv_yaw_norm;
 }
 
