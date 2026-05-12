@@ -2038,8 +2038,8 @@ void NavEKF3_core::ConstrainStates()
     for (uint8_t i=4; i<=6; i++) statesArray[i] = constrain_ftype(statesArray[i],-5.0e2f,5.0e2f);
     // position limit TODO apply circular limit
     for (uint8_t i=7; i<=8; i++) statesArray[i] = constrain_ftype(statesArray[i],-EK3_POSXY_STATE_LIMIT,EK3_POSXY_STATE_LIMIT);
-    // height limit covers home alt on everest through to home alt at SL and balloon drop
-    stateStruct.position.z = constrain_ftype(stateStruct.position.z,-4.0e4f,1.0e4f);
+    // height limit covers home alt on everest through to home alt at SL and balloon drop, but this covers mid air restart
+    stateStruct.position.z = constrain_ftype(stateStruct.position.z,-4.0e4f,4.0e4f); 
     // gyro bias limit (this needs to be set based on manufacturers specs)
     for (uint8_t i=10; i<=12; i++) statesArray[i] = constrain_ftype(statesArray[i],-GYRO_BIAS_LIMIT*dtEkfAvg,GYRO_BIAS_LIMIT*dtEkfAvg);
     // the accelerometer bias limit is controlled by a user adjustable parameter
