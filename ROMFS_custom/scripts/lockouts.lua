@@ -47,7 +47,7 @@ end
 
 function altitude_updater()
     -- get current EKF position as a Location userdata (or nil if not reasonable)
-    local loc = ahrs:get_location()
+    local loc = ahrs:get_position()
     if loc == nil then
         gcs:send_text(6, "Abs Alt: position unavailable")
         return update, 1000
@@ -88,7 +88,7 @@ function control_lockout()
         local current_pitch = ahrs:get_pitch_rad()
         local minimum_pitch = math.rad(-30)
 
-        local minimum_speed = 100
+        local minimum_speed = 18
         local current_speed = ahrs:airspeed_estimate()
 
         --gcs:send_text(6, "Pitch: "..tostring(math.deg(current_pitch)).." Speed: "..tostring(current_speed))
@@ -184,15 +184,13 @@ function update()
     local MANUAL = 0
     local RTL = 11
 
-    gcs:send_text(6, "mode number: " .. vehicle:get_mode())
-
     altitude_updater()
 
     if not servo_test_completed and not drop_detected and alt_m ~= nil and alt_m > 30000 and alt_m < 33866.6328 then
         if servo_test_step == 0 then
             step_start = millis()
             previous_mode = vehicle:get_mode()
-            --vehicle:set_mode(7) -- 7 is test mode
+            vehicle:set_mode(7) -- 7 is test mode
             gcs:send_text(6, "Servo test mode started")
             servo_test_step = 1
         end
@@ -222,14 +220,14 @@ function update()
             SRV_Channels:set_output_pwm(96, 1550)
             -- restore previous mode
             if previous_mode ~= nil then
-                --vehicle:set_mode(previous_mode)
+                vehicle:set_mode(previous_mode)
                 gcs:send_text(6, "Servo test complete, mode restored")
             
             else
                 if pullup_complete then
-                    --vehicle:set_mode(GUIDED)
+                    vehicle:set_mode(GUIDED)
                 else
-                    --vehicle:set_mode(MANUAL)
+                    vehicle:set_mode(MANUAL)
                 end
             end
             servo_test_completed = true  -- only run once
@@ -239,13 +237,13 @@ function update()
         if not servo_test_completed then
             servo_test_completed = true
             if previous_mode ~= nil then
-                    --vehicle:set_mode(previous_mode)
+                    vehicle:set_mode(previous_mode)
                     gcs:send_text(6, "Servo abrupt ended, previous mode restored")
             else
                 if pullup_complete then
-                    --vehicle:set_mode(GUIDED)
+                    vehicle:set_mode(GUIDED)
                 else
-                    --vehicle:set_mode(MANUAL)
+                    vehicle:set_mode(MANUAL)
                 end
             end
         end
@@ -288,11 +286,11 @@ function update()
         drop_detected = drop_detector()
 
         if mode == RTL then
-            --if vehicle:set_mode(MANUAL) then
-            --    gcs:send_text(6, "Switched to MANUAL")
-            --else
-            --    gcs:send_text(4, "Mode change to MANUAL failed")
-            --end
+            if vehicle:set_mode(MANUAL) then
+                gcs:send_text(6, "Switched to MANUAL")
+            else
+                gcs:send_text(4, "Mode change to MANUAL failed")
+            end
         end
     end
 
@@ -305,7 +303,7 @@ function update()
         end
     end
 
-    local loc = ahrs:get_position()
+    local loc = ahrs:get_location()
     local current_time = millis()
 
     if arming:is_armed() and drop_detected then
@@ -356,21 +354,21 @@ function update()
 
         if pullup_complete then
             if vehicle:get_mode() ~= GUIDED then
-                --if vehicle:set_mode(GUIDED) then
-                --    vehicle:set_target_location(target)
-                --    gcs:send_text(6, "Switched to GUIDED")
-                --    
-                --else
-                --    gcs:send_text(4, "Mode change to GUIDED failed")
-                --end
+                if vehicle:set_mode(GUIDED) then
+                    vehicle:set_target_location(target)
+                    gcs:send_text(6, "Switched to GUIDED")
+                    
+                else
+                    gcs:send_text(4, "Mode change to GUIDED failed")
+                end
             end
         else
             if vehicle:get_mode() ~= MANUAL then
-                --if vehicle:set_mode(MANUAL) then
-                --    gcs:send_text(6, "Switched to MANUAL")
-                --else
-                --    gcs:send_text(4, "Mode change to MANUAL failed")
-                --end
+                if vehicle:set_mode(MANUAL) then
+                    gcs:send_text(6, "Switched to MANUAL")
+                else
+                    gcs:send_text(4, "Mode change to MANUAL failed")
+                end
             end
         end 
     end

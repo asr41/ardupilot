@@ -23,10 +23,10 @@ local starboard_ranged_trim = 1550
 local portside_speed_trim  = 1499
 local starboard_speed_trim = 1501
 
-local switch_to_speed_m = 1000
-local switch_to_range_m = 2000
+local switch_to_speed_m = 1500
+local switch_to_range_m = 4000
 
-local alt_switch_to_ranged = 1000
+local alt_switch_to_ranged = 1500
 
 local SERVO2_TRIM = Parameter()
 SERVO2_TRIM:init('SERVO2_TRIM')
