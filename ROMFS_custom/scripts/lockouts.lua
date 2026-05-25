@@ -1,5 +1,23 @@
 --pullup lockout code
 
+alt_m = 0.0
+drop_detected = false
+drop_commanded = false
+pullup_complete = false
+last_time_lo_ms = millis()
+low_g_duration = 0.0
+drop_detector_last_time_ms = millis()
+gps_lost_start_time = nil  -- Track when GPS was first lost
+emergency_cutaway_start_ms = 0
+cutaway_confirmed = false
+servo_test_completed = false
+servo_test_step = 0
+step_start = 0
+previous_mode = nil
+
+GUIDED = 15 --guided mode enum
+ROLLDAMP = 27 --roll damper mode enum
+
 -- Define safe areas as polygons to perform balloon drop. 
 local safe_zones = {
     -- Can define multiple polygons over ocean areas. 
@@ -33,8 +51,8 @@ function is_over_safe_zone()
         return false  
     end
     
-    local lat = loc:lat() / 1e7  -- Convert from integer degrees
-    local lng = loc:lng() / 1e7
+    local lat = loc:lat() * 1e-7  -- Convert from integer degrees
+    local lng = loc:lng() * 1e-7
     
     for _, zone in ipairs(safe_zones) do
         if point_in_polygon(lat, lng, zone) then
@@ -181,71 +199,24 @@ end
 function update()
 
     local mode = vehicle:get_mode()
-    local MANUAL = 0
-    local RTL = 11
 
     altitude_updater()
 
-    if not servo_test_completed and not drop_detected and alt_m ~= nil and alt_m > 30000 and alt_m < 33866.6328 then
-        if servo_test_step == 0 then
-            step_start = millis()
-            previous_mode = vehicle:get_mode()
-            vehicle:set_mode(7) -- 7 is test mode
-            gcs:send_text(6, "Servo test mode started")
-            servo_test_step = 1
+    if not drop_detected and alt_m ~= nil and alt_m > 30000 and alt_m < 33866.6328 then
+        local now = millis()
+        
+        if pullup_complete then
+            vehicle:set_mode(GUIDED)
+        else
+            vehicle:set_mode(ROLLDAMP)
         end
 
-        local now = millis()
-        if servo_test_step == 1 then
-            SRV_Channels:set_output_pwm(94, 1300)
-            SRV_Channels:set_output_pwm(95, 1300)
-            SRV_Channels:set_output_pwm(96, 1300)
-            if now - step_start >= 1000 then
-                gcs:send_text(6, "Servo deflect 1")
-                servo_test_step = 2
-                step_start = now
-            end
-        elseif servo_test_step == 2 then
-            SRV_Channels:set_output_pwm(94, 1700)
-            SRV_Channels:set_output_pwm(95, 1700)
-            SRV_Channels:set_output_pwm(96, 1700)
-            if now - step_start >= 1000 then
-                gcs:send_text(6, "Servo deflect 2")
-                servo_test_step = 3
-                step_start = now
-            end
-        elseif servo_test_step == 3 then
-            SRV_Channels:set_output_pwm(94, 1500)
-            SRV_Channels:set_output_pwm(95, 1450)
-            SRV_Channels:set_output_pwm(96, 1550)
-            -- restore previous mode
-            if previous_mode ~= nil then
-                vehicle:set_mode(previous_mode)
-                gcs:send_text(6, "Servo test complete, mode restored")
-            
-            else
-                if pullup_complete then
-                    vehicle:set_mode(GUIDED)
-                else
-                    vehicle:set_mode(MANUAL)
-                end
-            end
-            servo_test_completed = true  -- only run once
-        end
     
     else
-        if not servo_test_completed then
-            servo_test_completed = true
-            if previous_mode ~= nil then
-                    vehicle:set_mode(previous_mode)
-                    gcs:send_text(6, "Servo abrupt ended, previous mode restored")
-            else
-                if pullup_complete then
-                    vehicle:set_mode(GUIDED)
-                else
-                    vehicle:set_mode(MANUAL)
-                end
-            end
+        if pullup_complete then
+            vehicle:set_mode(GUIDED)
+        else
+            vehicle:set_mode(ROLLDAMP)
         end
     end
 
@@ -286,10 +257,10 @@ function update()
         drop_detected = drop_detector()
 
         if mode == RTL then
-            if vehicle:set_mode(MANUAL) then
-                gcs:send_text(6, "Switched to MANUAL")
+            if vehicle:set_mode(ROLLDAMP) then
+                gcs:send_text(6, "Switched to ROLLDAMP")
             else
-                gcs:send_text(4, "Mode change to MANUAL failed")
+                gcs:send_text(4, "Mode change to ROLLDAMP failed")
             end
         end
     end
@@ -341,7 +312,7 @@ function update()
             target:alt(1)
         end
 
-        local GUIDED = 15 --guided mode enum
+
 
         if not control_lockout() then
             --gcs:send_text(6, "Control Lockout Disabled")
@@ -363,11 +334,11 @@ function update()
                 end
             end
         else
-            if vehicle:get_mode() ~= MANUAL then
-                if vehicle:set_mode(MANUAL) then
-                    gcs:send_text(6, "Switched to MANUAL")
+            if vehicle:get_mode() ~= ROLLDAMP then
+                if vehicle:set_mode(ROLLDAMP) then
+                    gcs:send_text(6, "Switched to ROLLDAMP")
                 else
-                    gcs:send_text(4, "Mode change to MANUAL failed")
+                    gcs:send_text(4, "Mode change to ROLLDAMP failed")
                 end
             end
         end 
@@ -375,21 +346,5 @@ function update()
 
     return update, 100
 end
-
-
-alt_m = 0.0
-drop_detected = false
-drop_commanded = false
-pullup_complete = false
-last_time_lo_ms = millis()
-low_g_duration = 0.0
-drop_detector_last_time_ms = millis()
-gps_lost_start_time = nil  -- Track when GPS was first lost
-emergency_cutaway_start_ms = 0
-cutaway_confirmed = false
-servo_test_completed = false
-servo_test_step = 0
-step_start = 0
-previous_mode = nil
 
 return update, 100

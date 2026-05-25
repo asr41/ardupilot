@@ -457,7 +457,7 @@ void Plane::trifin_update()
     const float roll  = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
     const float pitch = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
     const float yaw   = SRV_Channels::get_output_scaled(SRV_Channel::k_rudder);
-
+    
     const float G = g.tri_mix_gain.get();  // tri-mix Gain
 
     // Apply the precomputed mixing matrix

@@ -70,7 +70,7 @@ public:
 #if MODE_AUTOLAND_ENABLED
         AUTOLAND      = 26,
 #endif
-
+        ROLLDAMP      = 27
     // Mode number 30 reserved for "offboard" for external/lua control.
     };
 
@@ -1073,3 +1073,17 @@ protected:
 };
 
 #endif
+class ModeRollDamper : public Mode {
+public:
+    Number mode_number() const override { return Number::ROLLDAMP; }
+    const char *name()   const override { return "RollDamper"; }
+    const char *name4()  const override { return "RDMP"; }
+
+    void update() override;  // RC to servo outputs, required
+
+    //void run() override;
+
+protected:
+    bool _enter() override;  // optional: called on mode entry
+    //void _exit()  override;  // optional: called on mode exit
+};
