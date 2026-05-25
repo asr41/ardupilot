@@ -373,6 +373,7 @@ public:
 
         k_param_tri_mix_gain,
         k_param_tri_trim_dz,
+        k_param_mode_rolldamp,
 
     };
 

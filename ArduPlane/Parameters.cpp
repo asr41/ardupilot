@@ -959,6 +959,10 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: mode_takeoff.cpp
     GOBJECT(mode_takeoff, "TKOFF_", ModeTakeoff),
 
+    // @Group: RDMP_
+    // @Path: mode_rolldamp.cpp
+    GOBJECT(mode_rolldamp, "RDMP_", ModeRollDamper),
+
 #if MODE_AUTOLAND_ENABLED
     // @Group: AUTOLAND_
     // @Path: mode_autoland.cpp

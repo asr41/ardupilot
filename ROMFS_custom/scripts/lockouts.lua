@@ -15,8 +15,12 @@ servo_test_step = 0
 step_start = 0
 previous_mode = nil
 
+MANUAL = 0 --manual mode enum
 GUIDED = 15 --guided mode enum
 ROLLDAMP = 27 --roll damper mode enum
+
+enacted_guided_change = false
+enacted_rolldamp_change = false
 
 -- Define safe areas as polygons to perform balloon drop. 
 local safe_zones = {
@@ -73,17 +77,6 @@ function altitude_updater()
 
     -- altitude from Location is in centimeters
     local alt_cm = loc:alt() or 0
-
-    -- If this Location is relative to home, convert to absolute by adding home alt
-    --[[if loc:relative_alt() then
-        if ahrs:home_is_set() then
-            local home = ahrs:get_home()
-            if home then
-                alt_cm = alt_cm + (home:alt() or 0)
-            end
-        end
-    end
-    --]]
 
     alt_m = alt_cm / 100.0
 end
@@ -202,22 +195,10 @@ function update()
 
     altitude_updater()
 
-    if not drop_detected and alt_m ~= nil and alt_m > 30000 and alt_m < 33866.6328 then
-        local now = millis()
-        
-        if pullup_complete then
-            vehicle:set_mode(GUIDED)
-        else
-            vehicle:set_mode(ROLLDAMP)
-        end
-
-    
+    if pullup_complete then
+        vehicle:set_mode(GUIDED)
     else
-        if pullup_complete then
-            vehicle:set_mode(GUIDED)
-        else
-            vehicle:set_mode(ROLLDAMP)
-        end
+        vehicle:set_mode(ROLLDAMP)
     end
 
     if millis() - last_time_lo_ms > 1000 then
@@ -255,21 +236,13 @@ function update()
 
     if not drop_detected then
         drop_detected = drop_detector()
-
-        if mode == RTL then
-            if vehicle:set_mode(ROLLDAMP) then
-                gcs:send_text(6, "Switched to ROLLDAMP")
-            else
-                gcs:send_text(4, "Mode change to ROLLDAMP failed")
-            end
-        end
     end
 
     if not cutaway_confirmed and arming:is_armed() then
         if ready_to_drop() or drop_commanded then --case where we're on the balloon and ready to drop
             drop_commanded = true
             nominal_cutaway()
-        elseif drop_detected and not drop_commanded and is_over_safe_zone() then
+        elseif drop_detected and not drop_commanded and is_over_safe_zone() then --balloon popped early
             emergency_cutaway()
         end
     end
@@ -319,22 +292,20 @@ function update()
             --vehicle:set_target_location(target)
             pullup_complete = true
             
-        else
-            --gcs:send_text(6, "Controls locked out")
         end
 
         if pullup_complete then
-            if vehicle:get_mode() ~= GUIDED then
+            if vehicle:get_mode() ~= GUIDED and not enacted_guided_change then
                 if vehicle:set_mode(GUIDED) then
                     vehicle:set_target_location(target)
                     gcs:send_text(6, "Switched to GUIDED")
-                    
+                    enacted_guided_change = true
                 else
                     gcs:send_text(4, "Mode change to GUIDED failed")
                 end
             end
         else
-            if vehicle:get_mode() ~= ROLLDAMP then
+            if vehicle:get_mode() == MANUAL then
                 if vehicle:set_mode(ROLLDAMP) then
                     gcs:send_text(6, "Switched to ROLLDAMP")
                 else

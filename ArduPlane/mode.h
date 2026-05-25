@@ -1075,6 +1075,8 @@ protected:
 #endif
 class ModeRollDamper : public Mode {
 public:
+    ModeRollDamper();
+
     Number mode_number() const override { return Number::ROLLDAMP; }
     const char *name()   const override { return "RollDamper"; }
     const char *name4()  const override { return "RDMP"; }
@@ -1082,6 +1084,13 @@ public:
     void update() override;  // RC to servo outputs, required
 
     void run() override;
+
+    static const struct AP_Param::GroupInfo var_info[];
+
+    AP_Float damp_gain;
+    AP_Float prop_gain;
+    AP_Float intg_gain;
+    AP_Float intg_max;
 
 protected:
     bool _enter() override;
