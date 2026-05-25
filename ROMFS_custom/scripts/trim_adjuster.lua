@@ -17,17 +17,25 @@
     only make changes on transitions in case we need to modify in flight
 ]]--
 
+local last_portside_trim = 1450
+local last_starboard_trim = 1550
+local last_top_trim = 1500
+
 local portside_ranged_trim  = 1450
 local starboard_ranged_trim = 1550
 
-local portside_speed_trim  = 1499
-local starboard_speed_trim = 1501
+local delta_trim = 49
 
-local switch_to_speed_m = 1500
-local switch_to_range_m = 4000
+local portside_speed_trim  = portside_ranged_trim + delta_trim
+local starboard_speed_trim = starboard_ranged_trim - delta_trim
+
+local switch_to_speed_m = 2000
+local switch_to_range_m = 6000
 
 local alt_switch_to_ranged = 1500
 
+local SERVO1_TRIM = Parameter()
+SERVO1_TRIM:init('SERVO1_TRIM')
 local SERVO2_TRIM = Parameter()
 SERVO2_TRIM:init('SERVO2_TRIM')
 local SERVO3_TRIM = Parameter()
@@ -35,6 +43,13 @@ SERVO3_TRIM:init('SERVO3_TRIM')
 
 local ranged_latch = false --default ranged mode
 local speed_latch = false
+
+GUIDED = 15 --guided mode enum
+ROLLDAMP = 27 --roll damper mode enum
+
+TRIFIN1 = 190 --trifin1 servo channel
+TRIFIN2 = 191 --trifin2 servo channel
+TRIFIN3 = 192 --trifin3 servo channel
 
 --when called transitions by increment, returns true when done
 local function trim_to_with_transition(final_trim_port, final_trim_star, increment)
@@ -75,7 +90,7 @@ end
 
 local function set_to_ranged_mode()
     if not ranged_latch then
-        if trim_to_with_transition(portside_ranged_trim, starboard_ranged_trim, 5) then
+        if trim_to_with_transition(portside_ranged_trim, starboard_ranged_trim, 2) then
             ranged_latch = true
             speed_latch = false
         end
@@ -107,9 +122,35 @@ local function out_of_range(current_loc, target_loc, range_m)
     return false
 end
 
+local function apply_stable_roll_to_current_trim()
+    portside_ranged_trim = last_portside_trim
+    starboard_ranged_trim = last_starboard_trim
+    
+    portside_speed_trim = last_portside_trim + delta_trim
+    starboard_speed_trim = last_starboard_trim - delta_trim
+
+    SERVO1_TRIM:set_and_save(last_top_trim)
+    SERVO2_TRIM:set_and_save(portside_ranged_trim)
+    SERVO3_TRIM:set_and_save(starboard_ranged_trim)
+end
+
+last_mode = nil
 function update()
     local current_loc = ahrs:get_location()
     local target_loc = vehicle:get_target_location()
+    local mode = vehicle:get_mode()
+
+    if mode == ROLLDAMP then
+        last_top_trim = SRV_Channels:get_output_pwm(TRIFIN1)
+        last_portside_trim = SRV_Channels:get_output_pwm(TRIFIN2)
+        last_starboard_trim = SRV_Channels:get_output_pwm(TRIFIN3)
+        last_mode = mode
+        return update, 20
+    end
+
+    if mode ~= last_mode and mode == GUIDED then
+        apply_stable_roll_to_current_trim()
+    end
 
     if current_loc ~= nil and target_loc ~= nil then
         local altitude_m = current_loc:alt() * 0.01
@@ -126,8 +167,11 @@ function update()
         end
     end
 
+    last_mode = mode
+
     return update, 1000
 end
 
+SERVO1_TRIM:set_and_save(1500)
 set_to_ranged_mode()
 return update, 1000

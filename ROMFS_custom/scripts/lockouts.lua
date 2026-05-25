@@ -71,7 +71,7 @@ function altitude_updater()
     -- get current EKF position as a Location userdata (or nil if not reasonable)
     local loc = ahrs:get_position()
     if loc == nil then
-        gcs:send_text(6, "Abs Alt: position unavailable")
+        --gcs:send_text(6, "Abs Alt: position unavailable")
         return update, 1000
     end
 
