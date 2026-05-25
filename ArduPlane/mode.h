@@ -1081,9 +1081,11 @@ public:
 
     void update() override;  // RC to servo outputs, required
 
-    //void run() override;
+    void run() override;
 
 protected:
-    bool _enter() override;  // optional: called on mode entry
-    //void _exit()  override;  // optional: called on mode exit
+    bool _enter() override;
+
+private:
+    float roll_integrator;
 };
