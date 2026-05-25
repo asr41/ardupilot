@@ -24,7 +24,7 @@ const AP_Param::GroupInfo ModeRollDamper::var_info[] = {
     // @Range: -500 0
     // @Increment: 5
     // @User: Standard
-    AP_GROUPINFO("INTG_GAIN", 3, ModeRollDamper, intg_gain, -150.0f),
+    AP_GROUPINFO("INTG_GAIN", 3, ModeRollDamper, intg_gain, -200.0f),
 
     // @Param: INTG_MAX
     // @DisplayName: Roll integrator state limit
