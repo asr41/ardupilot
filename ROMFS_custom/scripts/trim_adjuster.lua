@@ -24,7 +24,7 @@ local last_top_trim = 1500
 local portside_ranged_trim  = 1450
 local starboard_ranged_trim = 1550
 
-local delta_trim = 49
+local delta_trim = 20
 
 local portside_speed_trim  = portside_ranged_trim + delta_trim
 local starboard_speed_trim = starboard_ranged_trim - delta_trim
