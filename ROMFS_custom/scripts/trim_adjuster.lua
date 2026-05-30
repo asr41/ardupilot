@@ -136,8 +136,7 @@ end
 
 last_mode = nil
 function update()
-    local current_loc = ahrs:get_location()
-    local target_loc = vehicle:get_target_location()
+    
     local mode = vehicle:get_mode()
 
     if mode == ROLLDAMP then
@@ -151,6 +150,9 @@ function update()
     if mode ~= last_mode and mode == GUIDED then
         apply_stable_roll_to_current_trim()
     end
+
+    local current_loc = ahrs:get_location()
+    local target_loc = vehicle:get_target_location()
 
     if current_loc ~= nil and target_loc ~= nil then
         local altitude_m = current_loc:alt() * 0.01
